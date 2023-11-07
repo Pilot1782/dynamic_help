@@ -5,6 +5,6 @@ interactions_dynamic_help
 - version
 """
 
-from .extension import base, version, DynHelp
+from .extension import DynHelp
 
-__all__ = ["base", "version", "DynHelp"]
+__all__ = ["DynHelp"]
