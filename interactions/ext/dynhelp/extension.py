@@ -21,7 +21,8 @@ option_types = {
 
 class DynHelp(Extension):
     def __init__(self, bot, *_, skip_coms: list = None, skip_opts: list = None, combine: bool = True,
-                 page_args: dict = None, logger=None):
+                 page_args: dict = None, logger=logging.getLogger("DynHelp"),
+                 embed_description: str = "Here's a list of all the commands.", embed_title: str = "Help"):
         super().__init__()
 
         self.bot = bot
@@ -39,10 +40,10 @@ class DynHelp(Extension):
         }
         self.page_args.update(page_args or {})
 
-        if logger:
-            self.logger = logger
-        else:
-            self.logger = logging.getLogger("DynHelp")
+        self.logger = logger
+
+        self.embed_description = embed_description
+        self.embed_title = embed_title
 
     @slash_command(
         name="help",
@@ -60,8 +61,8 @@ class DynHelp(Extension):
             commands = ctx.bot.interaction_tree
 
             embed = Embed(
-                title="Help",
-                description="Here's a list of all the commands.",
+                title=self.embed_title,
+                description=self.embed_description,
             )
 
             self.logger.debug(f"Tree: {commands}")
@@ -71,10 +72,11 @@ class DynHelp(Extension):
                     tre = com.to_dict()
                     callback = com.callback
                     doc = callback.__doc__ if callback.__doc__ else ""
+                    using_doc = False
 
                     self.logger.debug(f"Command: {tre}")
 
-                    if name in self.skip_coms:
+                    if name.strip() in self.skip_coms:
                         continue
 
                     name = tre["name"]
@@ -83,40 +85,47 @@ class DynHelp(Extension):
                     if len(doc) > len(
                             description) and doc != "partial(func, *args, **keywords) - new function with partial application\n    of the given arguments and keywords.\n":
                         description = doc.strip()
-                    dm = tre["dm_permission"]
+                        using_doc = True
+                    name += (" (DM)" if tre["dm_permission"] else "")
 
-                    self.logger.debug(f"Command: {name} - {description} - {dm}")
+                    self.logger.debug(f"Command: {name} - {description}")
 
                     options = (
-                        [
-                            f"\n- `{name}`: {description} ({option_types[option['type']]})" + (
-                                " DM allowed" if dm else "")
+                        {
+                            f"\n- `{option['name']}`: {option['description'] if 'description' in option else ''} "
+                            f"({option_types[option['type']]})"
                             for option in tre["options"]
-                        ]
+                        }
                         if "options" in tre
-                        else []
+                        else {}
                     )
 
                     # parse options via docstring
-                    if doc.strip() == description:
+                    if using_doc:
                         parsed_doc = docstring_parser.parse(doc)
 
                         if parsed_doc.params:
-                            options = [
-                                f"\n- `{param.arg_name}`: {param.description} ({option_types[param.type_name]})" + (
-                                    " DM allowed" if dm else "")
+                            options_doc = {
+                                f"\n- `{param.arg_name}`: {param.description} ({option_types[param.type_name]})"
                                 for param in parsed_doc.params
                                 if param.arg_name not in self.skip_opts
-                            ]
+                            }
+                            options.update(options_doc)
+
+                        short_description = parsed_doc.short_description.strip() if parsed_doc.short_description else ""
+                        long_description = parsed_doc.long_description.strip() if parsed_doc.long_description else ""
 
                         if self.combine:
-                            description = f"{parsed_doc.short_description.strip() if parsed_doc.short_description else ''}\n\n"
-                            f"{parsed_doc.long_description.strip() if parsed_doc.long_description else parsed_doc.short_description.strip()}"
+                            description = f"{short_description}" + (
+                                "\n\n" if parsed_doc.blank_after_short_description else "") \
+                                          + f"{long_description}"
                         else:
                             if parsed_doc.long_description:
                                 description = parsed_doc.long_description.strip()
                             elif parsed_doc.short_description:
                                 description = parsed_doc.short_description.strip()
+
+                        self.logger.debug(f"Parsed description: {description}")
 
                     embed.add_field(
                         name=f"`/{name}`",
