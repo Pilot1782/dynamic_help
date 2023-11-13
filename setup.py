@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="interactions_dynamic_help",
-    version="1.0.4.1",
+    version="1.0.4.2",
     description="Unofficial Dynamic Help Command for interactions.py",
     long_description=long_description,
     long_description_content_type="text/markdown",
