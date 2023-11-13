@@ -1,3 +1,6 @@
+import logging
+import traceback
+
 import docstring_parser
 from interactions import Extension, slash_command, SlashContext, Embed
 
@@ -17,8 +20,8 @@ option_types = {
 
 
 class DynHelp(Extension):
-    def __init__(self, bot, skip_coms: list = None, skip_opts: list = None, combine: bool = True, *_,
-                 page_args: dict = None):
+    def __init__(self, bot, *_, skip_coms: list = None, skip_opts: list = None, combine: bool = True,
+                 page_args: dict = None, logger=None):
         super().__init__()
 
         self.bot = bot
@@ -35,6 +38,11 @@ class DynHelp(Extension):
             "delete_after": 60,
         }
         self.page_args.update(page_args or {})
+
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger("DynHelp")
 
     @slash_command(
         name="help",
@@ -56,7 +64,7 @@ class DynHelp(Extension):
                 description="Here's a list of all the commands.",
             )
 
-            print(f"Tree: {commands}")
+            self.logger.debug(f"Tree: {commands}")
 
             for _, tree in commands.items():
                 for name, com in tree.items():
@@ -64,20 +72,20 @@ class DynHelp(Extension):
                     callback = com.callback
                     doc = callback.__doc__ if callback.__doc__ else ""
 
-                    print(f"Command: {tre}")
+                    self.logger.debug(f"Command: {tre}")
 
                     if name in self.skip_coms:
                         continue
 
                     name = tre["name"]
-                    description = tre["description"].strip() if tre["description"] else ""
+                    description = tre["description"].strip() if "description" in tre else "No Description Set"
 
                     if len(doc) > len(
                             description) and doc != "partial(func, *args, **keywords) - new function with partial application\n    of the given arguments and keywords.\n":
                         description = doc.strip()
                     dm = tre["dm_permission"]
 
-                    print(f"Command: {name} - {description} - {dm}")
+                    self.logger.debug(f"Command: {name} - {description} - {dm}")
 
                     options = (
                         [
@@ -119,4 +127,5 @@ class DynHelp(Extension):
             await ctx.send(embed=embed, **self.page_args)
         except Exception as err:
             await ctx.send("An error occurred while running the command", ephemeral=True)
+            self.logger.error(f"An error occurred while running the command:\n{traceback.format_exc()}")
             raise err
