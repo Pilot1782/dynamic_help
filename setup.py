@@ -5,11 +5,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="interactions_dynamic_help",
-    version="1.0.3",
+    version="1.0.4",
     description="Unofficial Dynamic Help Command for interactions.py",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Pilot1782/interactions-dynamic-help",
+    url="https://github.com/Pilot1782/dynamic_help",
     author="Pilot1782",
     author_email="",
     license="GNU",

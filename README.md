@@ -29,7 +29,8 @@ bot.start("Token")
 
 Longer description is done with a docstring.
 
-**If you are using a docstring longer than 100 chars, you MUST provide a description in the slash_command**
+**If you are using a docstring longer than 100 chars, you MUST provide a description in the slash_command,
+otherwise the docstring will be used as the description**
 
 ```python
 from interactions import Client, slash_command
@@ -67,4 +68,19 @@ the decorator
 
 ```python
 bot.load_extension("interactions.ext.dynhelp", skip_coms=["test"], skip_opts=["test"])
+```
+
+## Custom args to the paginator
+
+These can be added by adding `paginator_args` to the decorator, your args will be added to the default args which are
+
+```json
+{
+  "ephemeral": true,
+  "delete_after": 60
+}
+```
+
+```python
+bot.load_extension("interactions.ext.dynhelp", paginator_args={"timeout": 60})
 ```

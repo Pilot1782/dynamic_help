@@ -17,19 +17,36 @@ option_types = {
 
 
 class DynHelp(Extension):
-    def __init__(self, bot, skip_coms: list = None, skip_opts: list = None, combine: bool = True):
+    def __init__(self, bot, skip_coms: list = None, skip_opts: list = None, combine: bool = True, *_,
+                 page_args: dict = None):
         super().__init__()
 
         self.bot = bot
-        self.skip_coms = skip_coms or []
-        self.skip_opts = ["ctx"] + (skip_opts or [])
+        self.skip_coms = {"help"}
+        if skip_coms:
+            self.skip_coms.update(skip_coms)
+        self.skip_opts = {"ctx", "self", "kwargs", "args", "return"}
+        if skip_opts:
+            self.skip_opts.update(skip_opts)
         self.combine = combine
+
+        self.page_args = {
+            "ephemeral": True,
+            "delete_after": 60,
+        }
+        self.page_args.update(page_args or {})
 
     @slash_command(
         name="help",
         description="Shows this message.",
     )
     async def help(self, ctx: SlashContext):
+        """
+        Shows this message, which is a dynamically generated list of all the commands and their options.
+
+        :param ctx:
+        :return:
+        """
         try:
             # get a list of all the commands
             commands = ctx.bot.interaction_tree
@@ -90,8 +107,7 @@ class DynHelp(Extension):
                         else:
                             if parsed_doc.long_description:
                                 description = parsed_doc.long_description.strip()
-
-                            if parsed_doc.short_description and not parsed_doc.long_description:
+                            elif parsed_doc.short_description:
                                 description = parsed_doc.short_description.strip()
 
                     embed.add_field(
@@ -100,7 +116,7 @@ class DynHelp(Extension):
                               + (f"\nArgs:{'  '.join(options)}" if options else ""),
                         inline=True,
                     )
-            await ctx.send(embed=embed, ephemeral=True, delete_after=60)
+            await ctx.send(embed=embed, **self.page_args)
         except Exception as err:
             await ctx.send("An error occurred while running the command", ephemeral=True)
             raise err
