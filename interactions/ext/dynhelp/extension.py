@@ -70,7 +70,7 @@ class DynHelp(Extension):
                         continue
 
                     name = tre["name"]
-                    description = tre["description"].strip()
+                    description = tre["description"].strip() if tre["description"] else ""
 
                     if len(doc) > len(
                             description) and doc != "partial(func, *args, **keywords) - new function with partial application\n    of the given arguments and keywords.\n":
