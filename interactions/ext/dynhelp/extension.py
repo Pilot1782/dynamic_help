@@ -86,7 +86,7 @@ class DynHelp(Extension):
                             description) and doc != "partial(func, *args, **keywords) - new function with partial application\n    of the given arguments and keywords.\n":
                         description = doc.strip()
                         using_doc = True
-                    name += (" (DM)" if tre["dm_permission"] else "")
+                    # name += (" (DM)" if tre["dm_permission"] else "")
 
                     self.logger.debug(f"Command: {name} - {description}")
 
